@@ -30,5 +30,46 @@ def solve_part_one():
 
     print("Part 1: ", gamma * epsilon)
     
+def sum_bits(bitarray) -> int:
+    v = 0
+    for b in bitarray:
+        v = (v << 1) | b
+    return v
+def solve_part_two():
+    puzzle = read_puzzle_input()
+    N, Ncol = puzzle.shape
+
+    candidates = puzzle.copy()
+    for col in range(Ncol):
+        ones = np.sum(candidates[:, col])
+        if ones >= (len(candidates) / 2):
+            mask = candidates[:, col] == 1
+        else:
+            mask = candidates[:, col] == 0
+        candidates = candidates[mask]
+
+        if len(candidates) == 1:
+            break
+
+    oxygen_rating = sum_bits(candidates[0])
+
+    candidates = puzzle.copy()
+    for col in range(Ncol):
+        ones = np.sum(candidates[:, col])
+        if ones >= (len(candidates) / 2):
+            mask = candidates[:, col] == 0
+        else:
+            mask = candidates[:, col] == 1
+        candidates = candidates[mask]
+
+        if len(candidates) == 1:
+            break
+
+    CO2_scrubber = sum_bits(candidates[0])
+
+    print(oxygen_rating, CO2_scrubber)
+    print("Part 2: ", oxygen_rating * CO2_scrubber)
+
 solve_part_one()
+solve_part_two()
     
