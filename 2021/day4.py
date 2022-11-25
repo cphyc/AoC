@@ -42,4 +42,25 @@ def solve_part_one():
     print("Part 1:", np.sum(grid[~mask]) * num)
 
 
+def solve_part_two():
+    bingo_input, grids = read_input()
+    masks = [np.zeros_like(g, dtype=bool) for g in grids]
+
+    when_done = np.full(len(masks), len(masks))
+    for i_input, num in enumerate(bingo_input):
+        for i, (grid, mask) in enumerate(zip(grids, masks)):
+            if when_done[i] < len(masks):
+                continue
+
+            mask |= grid == num
+
+            if np.any(np.all(mask, axis=1)) or np.any(np.all(mask, axis=0)):
+                when_done[i] = i_input
+
+    imax = np.argmax(when_done)
+    grid, mask = grids[imax], masks[imax]
+    print("Part 2:", np.sum(grid[~mask]) * bingo_input[when_done[imax]])
+
+
 solve_part_one()
+solve_part_two()
