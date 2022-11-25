@@ -70,8 +70,7 @@ def solve_part_two():
             grid[slx, sly] += 1
 
     print("Part 2:", np.sum(grid > 1))
-    return grid
 
 
 solve_part_one()
-grid = solve_part_two()
+solve_part_two()
