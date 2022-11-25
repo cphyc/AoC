@@ -43,7 +43,35 @@ def solve_part_one():
         grid[slx, sly] += 1
 
     print("Part 1:", np.sum(grid > 1))
+
+
+def solve_part_two():
+    xmax, ymax = 0, 0
+    for x1, y1, x2, y2 in read_input():
+        xmax = max(x1, x2, xmax)
+        ymax = max(y1, y2, ymax)
+
+    grid = np.zeros((xmax + 1, ymax + 1), dtype=int)
+    for x1, y1, x2, y2 in read_input():
+        if not (x1 == x2 or y1 == y2):
+            dx = np.sign(x2 - x1)
+            dy = np.sign(y2 - y1)
+
+            ix, iy = x1, y1
+            ok = True
+            while ok:
+                grid[ix, iy] += 1
+                ok = ix != x2 and iy != y2
+                ix += dx
+                iy += dy
+        else:
+            slx = slice(min(x1, x2), max(x1, x2) + 1)
+            sly = slice(min(y1, y2), max(y1, y2) + 1)
+            grid[slx, sly] += 1
+
+    print("Part 2:", np.sum(grid > 1))
     return grid
 
 
-grid = solve_part_one()
+solve_part_one()
+grid = solve_part_two()
