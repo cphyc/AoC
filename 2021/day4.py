@@ -29,8 +29,8 @@ def solve_part_one():
     masks = [np.zeros_like(g, dtype=bool) for g in grids]
 
     done = False
-    for i_input, num in enumerate(bingo_input):
-        for i, (grid, mask) in enumerate(zip(grids, masks)):
+    for num in bingo_input:
+        for grid, mask in zip(grids, masks):
             mask |= grid == num
 
             if np.any(np.all(mask, axis=1)) or np.any(np.all(mask, axis=0)):
