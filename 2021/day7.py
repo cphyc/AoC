@@ -22,4 +22,19 @@ def solve_part_one():
     print(f"Part 1: position={keys[imin]} cost={costs[imin]}")
 
 
+def solve_part_two():
+    x0 = load_input()
+    cost = {}
+    for x in range(x0.min(), x0.max() + 1):
+        diff = np.abs(x0 - x)
+        cost[x] = np.sum((diff * (diff + 1)) // 2)
+
+    keys = np.array(list(cost.keys()))
+    costs = np.array(list(cost.values()))
+
+    imin = np.argmin(costs)
+    print(f"Part 2: position={keys[imin]} cost={costs[imin]}")
+
+
 solve_part_one()
+solve_part_two()
