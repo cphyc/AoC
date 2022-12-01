@@ -23,4 +23,13 @@ def part1():
     print("Day 1, part 1:", max_calories)
 
 
+def part2():
+    calories_per_elf = read_input()
+
+    calories_per_elf = sorted(calories_per_elf, key=lambda x: sum(x), reverse=True)
+
+    print("Day 1, part 2:", sum(sum(cpe) for cpe in calories_per_elf[:3]))
+
+
 part1()
+part2()
