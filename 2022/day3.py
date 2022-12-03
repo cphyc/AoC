@@ -1,6 +1,8 @@
 import typing
 from pathlib import Path
 
+from more_itertools import chunked
+
 # example = """vJrwpWtwJgWrhcsFMMfFFhFp
 # jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL
 # PmmdzqPrVvPwwTWBwg
@@ -39,4 +41,20 @@ def part1():
     print("Day 3, Part I:", priority)
 
 
+def part2():
+    priority = 0
+    for sack1, sack2, sack3 in chunked(read_input(), 3):
+        s1 = set(sack1[0]).union(sack1[1])
+        s2 = set(sack2[0]).union(sack2[1])
+        s3 = set(sack3[0]).union(sack3[1])
+
+        # Find intersection of all three sets
+        s = s1 & s2 & s3
+        if len(s) != 1:
+            raise Exception("Invalid input")
+        priority += compute_priority(next(iter(s)))
+    print("Day 3, Part II:", priority)
+
+
 part1()
+part2()
