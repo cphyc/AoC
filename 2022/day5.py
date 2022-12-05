@@ -21,14 +21,16 @@ class Stack:
             ]
         )
 
-    def move_cranes(self, N: int, dest: "Stack"):
+    def move_cranes(self, N: int, dest: "Stack", *, retain_order: bool = False):
         # Split cranes into two groups
         keep, move = self.cranes[:-N], self.cranes[-N:]
 
         self.cranes = keep
 
-        # Cranes are moved one at a time, so we need to reverse the order
-        dest.cranes.extend(reversed(move))
+        if retain_order:
+            dest.cranes.extend(move)
+        else:
+            dest.cranes.extend(reversed(move))
 
 
 @dataclass
@@ -72,23 +74,23 @@ def read_input() -> tuple[list[Stack], list[Instruction]]:
 
 def part1():
     stacks, instructions = read_input()
-    # stacks = [
-    #     Stack.from_iterable("ZN"),
-    #     Stack.from_iterable("MCD"),
-    #     Stack.from_iterable("P"),
-    # ]
-    # instructions = [
-    #     Instruction.from_line(_)
-    #     for _ in (
-    #     "move 1 from 2 to 1",
-    #     "move 3 from 1 to 3",
-    #     "move 2 from 2 to 1",
-    #     "move 1 from 1 to 2",
-    #     )
-    # ]
+
     for instruction in instructions:
-        stacks[instruction.ifrom].move_cranes(instruction.N, stacks[instruction.ito])
+        stacks[instruction.ifrom].move_cranes(
+            instruction.N, stacks[instruction.ito], retain_order=False
+        )
     print("Day 5, Part I:", "".join(stack.cranes[-1] for stack in stacks))
 
 
+def part2():
+    stacks, instructions = read_input()
+
+    for instruction in instructions:
+        stacks[instruction.ifrom].move_cranes(
+            instruction.N, stacks[instruction.ito], retain_order=True
+        )
+    print("Day 5, Part II:", "".join(stack.cranes[-1] for stack in stacks))
+
+
 part1()
+part2()
