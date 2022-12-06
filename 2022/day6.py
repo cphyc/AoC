@@ -17,4 +17,13 @@ def part1():
     print("Day 6, part I:", i + 4)
 
 
+def part2():
+    buffer = read_input()
+    for i, subset in enumerate(windowed(buffer, 14)):
+        if Counter(subset).most_common(1)[0][1] == 1:
+            break
+    print("Day 6, part II:", i + 14)
+
+
 part1()
+part2()
