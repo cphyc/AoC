@@ -99,14 +99,39 @@ def part1():
     tree = read_input()
     total_weight = 0
 
-    def callback(node: Node, fullpath: Path):
+    def compute_weight(node: Node, fullpath: Path):
         nonlocal total_weight
         if isinstance(node, Directory) and (w := node.calc_size()) <= 100000:
             print(f"Adding {fullpath} with weight {w} to total weight")
             total_weight += w
 
-    tree.traverse(callback)
+    tree.traverse(compute_weight)
     print("Part I, total weight:", total_weight)
 
 
+def part2():
+    tree = read_input()
+
+    available_diskpace = 70000000
+    required_diskpace = 30000000
+
+    current_free_diskpace = available_diskpace - tree.calc_size()
+    need_to_be_freed = required_diskpace - current_free_diskpace
+
+    candidates = []
+
+    def find_candidates_for_deletion(node: Node, fullpath: Path):
+        nonlocal candidates
+        if isinstance(node, Directory) and (w := node.calc_size()) >= need_to_be_freed:
+            print(
+                f"Deleting {fullpath} with weight {w} would lead to"
+                " {current_free_diskpace + w} free disk space"
+            )
+            candidates.append(w)
+
+    tree.traverse(find_candidates_for_deletion)
+    print("Part II, minimal folder to delete has size: ", min(candidates))
+
+
 part1()
+part2()
