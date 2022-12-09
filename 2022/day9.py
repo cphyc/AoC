@@ -81,7 +81,6 @@ def part1():
     for step in read_input():
         head += step
 
-        oldTail = tail.copy()
         tail.move_towards(head)
 
         # draw_grid(head, tail)
@@ -92,4 +91,22 @@ def part1():
     # plt.show()
 
 
+def part2():
+    head = Pos(0, 0)
+    knots = [Pos(0, 0) for i in range(10)]
+
+    visited_locations = [(0, 0)]
+    for step in read_input():
+        knots[0] += step
+
+        for i, knot in enumerate(knots[1:]):
+            knot.move_towards(knots[i])  # move towards previous knot
+
+        # draw_grid(head, tail)
+        visited_locations.append((knots[-1].x, knots[-1].y))
+
+    print("Rope visited this number of cells: ", len(set(visited_locations)))
+
+
 part1()
+part2()
