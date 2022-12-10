@@ -196,4 +196,34 @@ def part1():
     print("Sum of the signal strength: ", sum(strengths))
 
 
+def part2():
+    tick = 1
+    x = 1
+
+    column = 0
+
+    lines = [[]]
+
+    for op in read_input():
+        for f in op:
+            if tick % 40 == 1:
+                lines.append([])
+                column = 0
+
+            # Draw the sprite
+            if x - 1 <= column <= x + 1:
+                lines[-1].append("#")
+            else:
+                lines[-1].append(" ")
+            # Do the operation
+            x = f(x)
+
+            # Next tick
+            tick += 1
+            column += 1
+
+    print("CRT image is:", "\n".join("".join(line) for line in lines))
+
+
 part1()
+part2()
