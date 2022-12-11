@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from dataclasses import dataclass
-from math import prod
+from math import lcm, prod
 from pathlib import Path
 from typing import Literal
 
@@ -30,6 +30,7 @@ class Monkey:
     target_if_false: int
     Ninspected: int = 0
     worry_divider: int = 3
+    worry_remainder: int = 0
 
     @classmethod
     def from_tokens(cls, tokens):
@@ -45,6 +46,9 @@ class Monkey:
     def throw_item(self, worry: int, monkeys: list["Monkey"]):
         self.Ninspected += 1
         newWorry = self.update_worry(worry) // self.worry_divider
+        if self.worry_remainder:
+            newWorry %= self.worry_remainder
+
         if self.test(newWorry):
             itarget = self.target_if_true
         else:
@@ -102,34 +106,6 @@ MonkeyGrammar = pp.delimited_list(MonkeyDef, delim="\n")
 
 
 raw_input = (Path(__file__).parent / "input11").read_text()
-"""Monkey 0:
-    Starting items: 79, 98
-    Operation: new = old * 19
-    Test: divisible by 23
-        If true: throw to monkey 2
-        If false: throw to monkey 3
-
-Monkey 1:
-    Starting items: 54, 65, 75, 74
-    Operation: new = old + 6
-    Test: divisible by 19
-        If true: throw to monkey 2
-        If false: throw to monkey 0
-
-Monkey 2:
-    Starting items: 79, 60, 97
-    Operation: new = old * old
-    Test: divisible by 13
-        If true: throw to monkey 1
-        If false: throw to monkey 3
-
-Monkey 3:
-    Starting items: 74
-    Operation: new = old + 3
-    Test: divisible by 17
-        If true: throw to monkey 0
-        If false: throw to monkey 1
-"""
 
 monkeys: list[Monkey] = list(MonkeyGrammar.parseString(raw_input))
 
@@ -156,4 +132,52 @@ def part1():
     )
 
 
-part1()
+def part2():
+    divisions = set()
+    for monkey in monkeys:
+        i = 1
+        while not monkey.test(i):
+            i += 1
+        divisions.add(i)
+    least_common_multiple = lcm(*divisions)
+
+    for monkey in monkeys:
+        monkey.worry_divider = 1
+        monkey.worry_remainder = least_common_multiple
+
+    for round in range(10_000):
+        for monkey in monkeys:
+            while monkey.worry_levels:
+                itemWorry = monkey.worry_levels.pop(0)
+                monkey.throw_item(itemWorry, monkeys)
+
+        if round + 1 in (
+            1,
+            20,
+            1000,
+            2000,
+            3000,
+            4000,
+            5000,
+            6000,
+            7000,
+            8000,
+            9000,
+            10000,
+        ):
+            print(f"Round {round+1}")
+            for monkey in monkeys:
+                print(f"Monkey {monkey.id} insected items {monkey.Ninspected} times")
+            print()
+
+    two_most_active_monkeys = sorted(
+        monkeys, key=lambda monkey: monkey.Ninspected, reverse=True
+    )[:2]
+    print(
+        "Monkey business:",
+        prod(monkey.Ninspected for monkey in two_most_active_monkeys),
+    )
+
+
+# part1()
+part2()
