@@ -116,12 +116,6 @@ def part1():
             while monkey.worry_levels:
                 itemWorry = monkey.worry_levels.pop(0)
                 monkey.throw_item(itemWorry, monkeys)
-        print(f"Round {round+1}")
-        for monkey in monkeys:
-            print(
-                f"Monkey {monkey.id}: {', '.join(str(_) for _ in monkey.worry_levels)}"
-            )
-        print()
 
     two_most_active_monkeys = sorted(
         monkeys, key=lambda monkey: monkey.Ninspected, reverse=True
@@ -151,33 +145,14 @@ def part2():
                 itemWorry = monkey.worry_levels.pop(0)
                 monkey.throw_item(itemWorry, monkeys)
 
-        if round + 1 in (
-            1,
-            20,
-            1000,
-            2000,
-            3000,
-            4000,
-            5000,
-            6000,
-            7000,
-            8000,
-            9000,
-            10000,
-        ):
-            print(f"Round {round+1}")
-            for monkey in monkeys:
-                print(f"Monkey {monkey.id} insected items {monkey.Ninspected} times")
-            print()
-
     two_most_active_monkeys = sorted(
         monkeys, key=lambda monkey: monkey.Ninspected, reverse=True
     )[:2]
     print(
-        "Monkey business:",
+        "Monkey business (this is worrying!):",
         prod(monkey.Ninspected for monkey in two_most_active_monkeys),
     )
 
 
-# part1()
+part1()
 part2()
