@@ -1,6 +1,5 @@
 import re
 from dataclasses import dataclass
-from importlib.resources import read_text
 from pathlib import Path
 
 import networkx as nx
@@ -51,7 +50,14 @@ current_best_path = None
 class ValveInstance:
     valves_activated: list[str]
     flow_rate: int
-    current_time: int
+    human_time: int
+
+    def __post_init__(self):
+        self.total_time = 30
+
+    @property
+    def current_time(self):
+        return self.human_time
 
     def potential_flowrate(self):
         closed_valves = set(valves) - set(self.valves_activated)
@@ -59,7 +65,7 @@ class ValveInstance:
         flow_rate = self.flow_rate
         for valve in closed_valves:
             path_len = nx.shortest_path_length(G, self.valves_activated[-1], valve)
-            remaining_time = 30 - (self.current_time + path_len + 1)
+            remaining_time = self.total_time - (self.current_time + path_len + 1)
             flow_rate += remaining_time * G.nodes[valve]["flow_rate"]
         return flow_rate
 
@@ -72,11 +78,11 @@ class ValveInstance:
             path_len = nx.shortest_path_length(G, self.valves_activated[-1], valve)
             new_time = self.current_time + path_len + 1
             flow_rate = G.nodes[valve]["flow_rate"]
-            new_flow = self.flow_rate + (30 - new_time) * flow_rate
+            new_flow = self.flow_rate + (self.total_time - new_time) * flow_rate
             vi = ValveInstance(
                 valves_activated=self.valves_activated + [valve],
                 flow_rate=new_flow,
-                current_time=new_time,
+                human_time=new_time,
             )
 
             if vi.flow_rate > current_best_flow_rate:
@@ -87,14 +93,106 @@ class ValveInstance:
                 yield vi
 
 
-vi = ValveInstance(valves_activated=["AA"], flow_rate=0, current_time=0)
-stack = list(vi.branch())
+@dataclass
+class ValveInstanceWithElephant(ValveInstance):
+    elephant_time: int
+    human_time: int
+    elephant_pos: str
+    human_pos: str
 
-while stack:
-    print("Current best:", current_best_flow_rate, current_best_path)
-    path = stack.pop()
-    for vi in path.branch():
-        stack.append(vi)
+    def __post_init__(self):
+        self.total_time = 26
 
-print(current_best_flow_rate)
-print(current_best_path)
+    def branch(self):
+        global current_best_flow_rate, current_best_path
+        # Explore all possible branches *leading to a closed valve*
+        closed_valves = list(set(valves) - set(self.valves_activated))
+
+        for valve in closed_valves:
+            flow_rate = G.nodes[valve]["flow_rate"]
+
+            # Try human exploration
+            path_len = nx.shortest_path_length(G, self.human_pos, valve)
+            new_time = self.human_time + path_len + 1
+            new_flow = self.flow_rate + (self.total_time - new_time) * flow_rate
+
+            vi = ValveInstanceWithElephant(
+                valves_activated=self.valves_activated + [valve],
+                flow_rate=new_flow,
+                human_time=new_time,
+                human_pos=valve,
+                elephant_time=self.elephant_time,
+                elephant_pos=self.elephant_pos,
+            )
+
+            if vi.flow_rate > current_best_flow_rate:
+                current_best_flow_rate = vi.flow_rate
+                current_best_path = vi.valves_activated
+
+            if vi.potential_flowrate() >= current_best_flow_rate:
+                yield vi
+
+            # Try elephant exploration
+            path_len = nx.shortest_path_length(G, self.elephant_pos, valve)
+            new_time = self.elephant_time + path_len + 1
+            new_flow = self.flow_rate + (self.total_time - new_time) * flow_rate
+
+            vi = ValveInstanceWithElephant(
+                valves_activated=self.valves_activated + [valve],
+                flow_rate=new_flow,
+                human_time=self.human_time,
+                human_pos=self.human_pos,
+                elephant_time=new_time,
+                elephant_pos=valve,
+            )
+
+            if vi.flow_rate > current_best_flow_rate:
+                current_best_flow_rate = vi.flow_rate
+                current_best_path = vi.valves_activated
+
+            if vi.potential_flowrate() >= current_best_flow_rate:
+                yield vi
+
+
+def part1():
+    vi = ValveInstance(valves_activated=["AA"], flow_rate=0, human_time=0)
+    stack = list(vi.branch())
+
+    while stack:
+        print("Current best:", current_best_flow_rate, current_best_path)
+        path = stack.pop()
+        for vi in path.branch():
+            stack.append(vi)
+
+    print(current_best_flow_rate)
+    print(current_best_path)
+
+
+part1()
+
+
+def part2():
+    global current_best_flow_rate, current_best_path
+    current_best_flow_rate = 0
+    current_best_path = None
+    vi = ValveInstanceWithElephant(
+        valves_activated=["AA"],
+        flow_rate=0,
+        human_time=0,
+        human_pos="AA",
+        elephant_time=0,
+        elephant_pos="AA",
+    )
+    stack = list(vi.branch())
+
+    while stack:
+        print("Current best:", current_best_flow_rate, current_best_path)
+        path = stack.pop()
+        for vi in path.branch():
+            stack.append(vi)
+
+    print(current_best_flow_rate)
+    print(current_best_path)
+
+
+part2()
