@@ -126,25 +126,7 @@ def to_int(ground: np.ndarray[bool]) -> tuple[int, ...]:
     return tuple(int("".join(np.where(grd, "1", "0")), 2) for grd in ground)
 
 
-def part1():
-    ground = np.zeros((10000, 7), dtype=bool)
-
-    wind_mgr = WindManager()
-    wind_blower = iter(wind_mgr)
-
-    rock_spawner = spawn_rock()
-    year = 0
-    while year < 2022:
-        simulate_rock(ground, next(rock_spawner), wind_blower, verbose=False)
-        year += 1
-
-    print("After 2022 falls, the height is", top_of_stack(ground))
-
-
-part1()
-
-
-def part2():
+def solve_for_year(tgt_year: int):
     ground = np.zeros((10000, 7), dtype=bool)
 
     Nrocks = len(rocks)
@@ -155,8 +137,7 @@ def part2():
 
     rock_spawner = spawn_rock()
     year = 0
-    stack_states = {}
-    tgt_year = 1000000000000
+    stack_states: dict[tuple[int, tuple[int, ...]], tuple[int, int]] = {}
     fast_forward = True
     while year < tgt_year:
         simulate_rock(ground, next(rock_spawner), wind_blower, verbose=False)
@@ -170,9 +151,9 @@ def part2():
             ground_signature = to_int(ground[bottom:cur_height])
 
             prev_occurence, prev_height = stack_states.get(
-                (wind_state, ground_signature), (None, None)
+                (wind_state, ground_signature), (-1, -1)
             )
-            if prev_occurence and fast_forward:
+            if prev_occurence != -1 and fast_forward:
                 print(
                     f"Stack is repeating from {prev_occurence=} to {year=}"
                     f"(Delta = {year - prev_occurence}, "
@@ -190,11 +171,22 @@ def part2():
 
                 fast_forward = False
 
-            stack_states[(wind_state, ground_signature)] = year, cur_height
+            stack_states[wind_state, ground_signature] = year, cur_height
 
     print(
-        "After 2022 falls, the height is", top_of_stack(ground) + DeltaHeight * Nsteps
+        f"After {tgt_year} falls, the height is",
+        top_of_stack(ground) + DeltaHeight * Nsteps,
     )
 
 
+def part1():
+    solve_for_year(2022)
+
+
+def part2():
+    solve_for_year(1_000_000_000_000)
+
+
+part1()
+print()
 part2()
