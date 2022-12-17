@@ -45,21 +45,27 @@ rocks = [
 ]
 
 
-def wind_direction() -> Generator[int, None, None]:
-    # wind_directions_raw = ">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>"
-    wind_directions_raw = (Path(__file__).parent / "input17").read_text().strip()
-    i = 0
-    while True:
-        d = wind_directions_raw[i % len(wind_directions_raw)]
-        yield (1 if d == ">" else -1)
-        i += 1
+class WindManager:
+    state: int
+
+    def __iter__(self):
+        # wind_directions_raw = ">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>"
+        wind_directions_raw = (Path(__file__).parent / "input17").read_text().strip()
+        self.state = 0
+        while True:
+            d = wind_directions_raw[self.state % len(wind_directions_raw)]
+            yield (1 if d == ">" else -1)
+            self.state += 1
+            self.state %= len(wind_directions_raw)
 
 
 def spawn_rock() -> Generator[np.ndarray, None, None]:
     i = 0
+    Nrocks = len(rocks)
     while True:
-        yield rocks[i % len(rocks)]
+        yield rocks[i]
         i += 1
+        i %= Nrocks
 
 
 def simulate_rock(
@@ -112,10 +118,19 @@ def simulate_rock(
         print("+-------+")
 
 
+def top_of_stack(ground: np.ndarray[bool]) -> int:
+    return np.argmin(np.any(ground, axis=1))
+
+
+def to_int(ground: np.ndarray[bool]) -> tuple[int, ...]:
+    return tuple(int("".join(np.where(grd, "1", "0")), 2) for grd in ground)
+
+
 def part1():
     ground = np.zeros((10000, 7), dtype=bool)
 
-    wind_blower = wind_direction()
+    wind_mgr = WindManager()
+    wind_blower = iter(wind_mgr)
 
     rock_spawner = spawn_rock()
     year = 0
@@ -123,4 +138,63 @@ def part1():
         simulate_rock(ground, next(rock_spawner), wind_blower, verbose=False)
         year += 1
 
-    print("After 2022 falls, the height is", np.argmin(np.any(ground, axis=1)))
+    print("After 2022 falls, the height is", top_of_stack(ground))
+
+
+part1()
+
+
+def part2():
+    ground = np.zeros((10000, 7), dtype=bool)
+
+    Nrocks = len(rocks)
+    wind_mgr = WindManager()
+    wind_blower = iter(wind_mgr)
+
+    stack_size = sum(rock.shape[0] for rock in rocks)
+
+    rock_spawner = spawn_rock()
+    year = 0
+    stack_states = {}
+    tgt_year = 1000000000000
+    fast_forward = True
+    while year < tgt_year:
+        simulate_rock(ground, next(rock_spawner), wind_blower, verbose=False)
+
+        year += 1
+        if year % Nrocks == (Nrocks - 1):
+            cur_height = top_of_stack(ground)
+            bottom = max(cur_height - stack_size, 0)
+
+            wind_state = wind_mgr.state
+            ground_signature = to_int(ground[bottom:cur_height])
+
+            prev_occurence, prev_height = stack_states.get(
+                (wind_state, ground_signature), (None, None)
+            )
+            if prev_occurence and fast_forward:
+                print(
+                    f"Stack is repeating from {prev_occurence=} to {year=}"
+                    f"(Delta = {year - prev_occurence}, "
+                    f"DeltaHeight = {cur_height - prev_height})"
+                )
+                Delta = year - prev_occurence
+                DeltaHeight = cur_height - prev_height
+                Nsteps = (tgt_year - year) // Delta
+                new_year = year + Nsteps * Delta
+                print(
+                    f"Fast-forwarding from {year=} to {new_year=} "
+                    f"(Nsteps={(new_year-year)/Delta})"
+                )
+                year = new_year
+
+                fast_forward = False
+
+            stack_states[(wind_state, ground_signature)] = year, cur_height
+
+    print(
+        "After 2022 falls, the height is", top_of_stack(ground) + DeltaHeight * Nsteps
+    )
+
+
+part2()
