@@ -48,15 +48,20 @@ class Wall:
     ymax: int
 
     @classmethod
-    def from_lines(cls, lines: list[Line]) -> "Wall":
+    def from_lines(cls, lines: list[Line], use_floor: bool = False) -> "Wall":
         xmax = max(max(line.x) for line in lines)
         ymax = max(max(line.y) for line in lines)
 
-        mask = np.zeros((ymax + 1, xmax + 1), dtype=int)
+        if use_floor:
+            ymax += 1
+
+        mask = np.zeros((ymax + 2, xmax + ymax + 2), dtype=int)
 
         for line in lines:
             for (x, y) in line.strokes():
                 mask[y, x] = 1
+
+        mask[-1, :] = 1
 
         return cls(lines, mask, ymax)
 
@@ -88,29 +93,35 @@ class Wall:
             # Cannot go down, left or right
             break
 
-        if y == self.ymax:
-            return 1
         self.mask[y, x] = 2
-        return 0
+        return x, y
 
 
 def part1():
     lines = [Line.from_line(line) for line in raw_input.splitlines()]
     wall = Wall.from_lines(lines)
-    # wall.draw()
 
-    out = 0
     Niter = 0
     while True:
-        out = wall.pour_sand()
-        if out == 0:
-            Niter += 1
-        else:
+        _x, y = wall.pour_sand()
+        if y == wall.ymax:
             break
-        # wall.draw()
-        # print()
+        Niter += 1
 
     print(f"After {Niter} iterations, sand flows to the abyss")
 
 
+def part2():
+    lines = [Line.from_line(line) for line in raw_input.splitlines()]
+    wall = Wall.from_lines(lines, use_floor=True)
+
+    Niter = 0
+    while wall.mask[0, 500] == 0:
+        wall.pour_sand()
+        Niter += 1
+
+    print(f"After {Niter} iterations, sand flows filled position (500, 0)")
+
+
 part1()
+part2()
