@@ -47,16 +47,19 @@ rocks = [
 
 class WindManager:
     state: int
+    cum_state: int
 
     def __iter__(self):
         # wind_directions_raw = ">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>"
         wind_directions_raw = (Path(__file__).parent / "input17").read_text().strip()
         self.state = 0
+        self.cum_state = 0
         while True:
             d = wind_directions_raw[self.state % len(wind_directions_raw)]
             yield (1 if d == ">" else -1)
             self.state += 1
             self.state %= len(wind_directions_raw)
+            self.cum_state += 1
 
 
 def spawn_rock() -> Generator[np.ndarray, None, None]:
@@ -165,7 +168,7 @@ def solve_for_year(tgt_year: int):
                 new_year = year + Nsteps * Delta
                 print(
                     f"Fast-forwarding from {year=} to {new_year=} "
-                    f"(Nsteps={(new_year-year)/Delta})"
+                    f"(Nsteps={(new_year-year)/Delta}) wind state {wind_mgr.cum_state}"
                 )
                 year = new_year
 
