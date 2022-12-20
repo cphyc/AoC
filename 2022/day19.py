@@ -53,6 +53,7 @@ def update_stock_and_fork(
     robots: np.ndarray,
     stacks: dict,
     time: int,
+    tmax: int,
 ):
     for i in range(4):
         # Already maxed-out production of this item
@@ -67,7 +68,7 @@ def update_stock_and_fork(
         else:
             dt = int(max(0, np.ceil(np.max((cost - stock)[mask] / robots[mask]))))
 
-        if time + dt >= 24:
+        if time + dt >= tmax:
             continue
 
         new_stock = stock + robots * (dt + 1) - cost
@@ -79,12 +80,8 @@ def update_stock_and_fork(
         if entry not in stacks[time + dt]:
             stacks[time + dt + 1].add(entry)
 
-    # Simple production turn
-    entry = tuple(stock + robots), tuple(robots)
-    stacks[time + 1].add(entry)
 
-
-def helper(ind_blueprint: int, blueprint: np.ndarray, tmax: int = 24) -> tuple[int, int]:
+def helper(ind_blueprint: int, blueprint: np.ndarray, tmax: int) -> tuple[int, int]:
     robots = np.array([1, 0, 0, 0])
     stock = np.array([0, 0, 0, 0])
 
@@ -92,14 +89,16 @@ def helper(ind_blueprint: int, blueprint: np.ndarray, tmax: int = 24) -> tuple[i
     stacks[0].add((tuple(stock), tuple(robots)))
 
     print(f"Blueprint #{ind_blueprint}:")
-    for t in range(tmax+1):
+    for t in range(tmax + 1):
+        if len(stacks[t]) == 0:
+            continue
         max_score = max(stock[3] for stock, _robot in stacks[t])
         max_prod = max(robots[3] for _stock, robots in stacks[t])
 
         filtered_stack = [
             (stock, robots)
             for stock, robots in stacks[t]
-            if stock[3] > max_score - 2 and robots[3] > max_prod - 2
+            if stock[3] >= max_score - 4 and robots[3] >= max_prod - 2
         ]
 
         print(
@@ -107,7 +106,9 @@ def helper(ind_blueprint: int, blueprint: np.ndarray, tmax: int = 24) -> tuple[i
             f"{max_score=} {max_prod=}"
         )
         for s, r in filtered_stack:
-            update_stock_and_fork(blueprint, np.asarray(s), np.asarray(r), stacks, t)
+            update_stock_and_fork(
+                blueprint, np.asarray(s), np.asarray(r), stacks, t, tmax
+            )
 
     return ind_blueprint, max_score
 
@@ -116,13 +117,33 @@ def part1():
     blueprints = read_blueprints()
     total_score = sum(
         ind * score
-        for ind, score in 
-        joblib.Parallel(n_jobs=30)(
-            joblib.delayed(helper)(i + 1, blueprint)
+        for ind, score in joblib.Parallel(n_jobs=30)(
+            joblib.delayed(helper)(i + 1, blueprint, 24)
             for i, blueprint in enumerate(blueprints)
         )
     )
 
     print("Total score:", total_score)
 
+
 part1()
+
+
+def part2():
+    # Elephant ate all but first three
+    blueprints = read_blueprints()[:3]
+
+    total_score = np.prod(
+        [
+            score
+            for _, score in joblib.Parallel(n_jobs=3)(
+                joblib.delayed(helper)(i + 1, blueprint, 32)
+                for i, blueprint in enumerate(blueprints)
+            )
+        ]
+    )
+
+    print("Total score (after elephants ate):", total_score)
+
+
+part2()
