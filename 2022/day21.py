@@ -1,7 +1,9 @@
 from dataclasses import dataclass
 from enum import Enum
-from operator import methodcaller
 from pathlib import Path
+from typing import Callable
+
+from scipy.optimize import brentq
 
 raw_input = """root: pppw + sjmn
 dbpl: 5
@@ -32,7 +34,7 @@ class Operation(Enum):
 @dataclass
 class Monkey:
     name: str
-    operation: int | tuple[str, Operation, str]
+    operation: int | tuple[str, Operation, str] | Callable
 
     @classmethod
     def from_line(cls, line: str) -> "Monkey":
@@ -47,7 +49,7 @@ class Monkey:
 
     @property
     def is_resolved(self) -> bool:
-        return isinstance(self.operation, int)
+        return isinstance(self.operation, int) or callable(self.operation)
 
 
 @dataclass
@@ -80,6 +82,62 @@ class MonkeyBand:
 
         return monkey.operation  # type: ignore
 
+    def find_number_abstract(self, key: str = "root") -> Callable:
+        monkey = self.monkeys[key]
 
-band = MonkeyBand.from_lines(raw_input.splitlines())
-print(f"Root has number {band.find_number()}.")
+        if isinstance(monkey.operation, int):
+            return lambda x: monkey.operation
+        elif callable(monkey.operation):
+            return monkey.operation
+
+        monkey1_key, op, monkey2_key = monkey.operation  # type: ignore
+
+        monkey1 = self.find_number_abstract(monkey1_key)
+        monkey2 = self.find_number_abstract(monkey2_key)
+
+        if op == Operation.ADD:
+            monkey.operation = lambda x: monkey1(x) + monkey2(x)
+        elif op == Operation.MUL:
+            monkey.operation = lambda x: monkey1(x) * monkey2(x)
+        elif op == Operation.SUB:
+            monkey.operation = lambda x: monkey1(x) - monkey2(x)
+        elif op == Operation.DIV:
+            monkey.operation = lambda x: monkey1(x) // monkey2(x)
+        else:
+            raise ValueError(f"Invalid op")
+
+        return monkey.operation
+
+
+def part1():
+    band = MonkeyBand.from_lines(raw_input.splitlines())
+    print(f"Root has number {band.find_number()}.")
+
+
+def part2():
+    band = MonkeyBand.from_lines(raw_input.splitlines())
+    band.monkeys["humn"].operation = lambda x: x
+    left = band.find_number_abstract(band.monkeys["root"].operation[0])
+    right = band.find_number_abstract(band.monkeys["root"].operation[2])
+
+    # We know have two methods, left and right, find the root of their difference
+    diff = lambda x: left(x) - right(x)
+    xL = 3000000000000  # magic numbers: found by hand
+    xR = 4000000000000  # magic numbers: found by hand
+    xM = (xL + xR) // 2
+
+    while xL + 1 != xR:
+        d = diff(xM)
+        if d > 0:
+            xL = xM
+        elif d < 0:
+            xR = xM
+        else:
+            break
+
+        xM = (xL + xR) // 2
+    print(f"If I shout {xM}, then root receives twice {left(xM)}")
+
+
+part1()
+part2()
